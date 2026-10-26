@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import BigNumber from 'bignumber.js';
 import { useBalancesForWallet, useAccount, useWalletManager } from '@tetherto/wdk-react-native-core';
@@ -59,7 +59,8 @@ function formatUsd(value: BigNumber | null): string {
  * totals, not just the active one) build on.
  */
 export function useWdkBalancesForAccount(accountIndex: number) {
-  // staleTime: 0 — WDK's own default is 30 SECONDS (confirmed directly in
+  // staleTime: 60s — balances make RPC calls, so they refresh at most once a
+  // minute. Was 0 (every focus refetched). WDK's own default is 30 SECONDS (confirmed directly in
   // its source: DEFAULT_QUERY_STALE_TIME_MS = 30 * 1000). During that
   // window, a screen regaining focus (e.g. returning from a send, or
   // switching accounts) won't refetch even though the underlying balance
@@ -74,7 +75,7 @@ export function useWdkBalancesForAccount(accountIndex: number) {
   const { data, isLoading, isRefetching, error, refetch } = useBalancesForWallet(
     accountIndex,
     ASSETS,
-    { enabled: true, staleTime: 0 },
+    { enabled: true, staleTime: 60_000 },
   );
 
   const symbols = useMemo(
@@ -83,6 +84,14 @@ export function useWdkBalancesForAccount(accountIndex: number) {
   );
   const { prices, isLoading: pricesLoading } = usePrices(symbols);
   const demoCredits = useDemoCredit((s) => s.credits);
+
+  // Assets never fetched yet come back from the cache with no balance. With a
+  // 60s staleTime those placeholders would count as fresh and show as 0, so
+  // fetch once now when any are present. Real balances do not re-trigger this.
+  const hasUnfetched = data?.some((b) => b.success && b.balance == null) ?? false;
+  useEffect(() => {
+    if (hasUnfetched) refetch();
+  }, [hasUnfetched, refetch]);
 
   const balances: TokenBalance[] = useMemo(() => {
     return ASSETS.map((asset) => {
@@ -250,12 +259,34 @@ export function useWdkTransactions() {
     queryKey: ['indexer-transfers', activeIndex, bitcoin.address, ethereum.address, arbitrum.address, polygon.address],
     queryFn: () => fetchAllTransfers(addressesByNetwork),
     enabled: addressesReady,
-    staleTime: 30_000,
+    staleTime: 60_000,
   });
 
+  // DEMO ONLY: Transak purchases credited in this session (see state/demoCredit.ts).
+  const demoTransfers = useDemoCredit((s) => s.transfers);
+
   const data: Transaction[] = useMemo(() => {
-    if (!query.data) return [];
-    return query.data
+    const demo: Transaction[] = Object.entries(demoTransfers)
+      .filter(([key]) => key.startsWith(`${activeIndex}:`))
+      .flatMap(([, list]) => list)
+      .flatMap((d): Transaction[] => {
+        const asset = ASSET_MAP.get(d.assetId);
+        if (!asset) return [];
+        return [
+          {
+            id: d.id,
+            direction: 'in',
+            token: { id: asset.getId(), symbol: asset.getSymbol(), chain: networkToChain(asset.getNetwork()) },
+            amount: new BigNumber(d.amount).toFixed(asset.getDecimals()),
+            fiatValue: `$${new BigNumber(d.amount).toFixed(2)}`,
+            address: 'Transak',
+            timestamp: d.timestamp,
+            status: 'confirmed',
+          },
+        ];
+      });
+    if (!query.data) return demo;
+    const indexed = query.data
       .map((t): Transaction | null => {
         const asset = ASSET_MAP.get(t.assetId);
         // fetchAllTransfers() only ever queries by addresses derived from
@@ -319,7 +350,8 @@ export function useWdkTransactions() {
         };
       })
       .filter((t): t is Transaction => t !== null);
-  }, [query.data, prices]);
+    return [...demo, ...indexed];
+  }, [query.data, prices, demoTransfers, activeIndex]);
 
   return {
     data,

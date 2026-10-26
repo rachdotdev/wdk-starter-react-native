@@ -38,6 +38,9 @@ const RHINO_CHAINS: Record<string, string> = {
   polygon: 'POLYGON',
 };
 
+/** Destinations Rhino.fi rejects, verified: "Chain POLYGON is not supported by the rhino.fi protocol". */
+const RHINO_UNSUPPORTED_DESTINATIONS = new Set(['polygon']);
+
 /** Rhino.fi's SDK has no timeout on its requests, so the app bounds each call. */
 const RHINO_CALL_TIMEOUT_MS = 30_000;
 
@@ -76,6 +79,11 @@ export function useRhinofiProvider(network: string, accountIndex: number): SwapP
       label: 'Rhino.fi',
 
       async quote(request: SwapRequest) {
+        // Rejected by Rhino.fi as a destination. Checked here so Automatic mode
+        // does not send a request that is known to fail and log it as an error.
+        if (RHINO_UNSUPPORTED_DESTINATIONS.has(request.to.network)) {
+          throw new Error('Rhino.fi does not support this destination chain.');
+        }
         const quote = await withTimeout(rhino.quoteSwidge(toOptions(request.from, request.to, request.fromAmountBase)), "quote");
         if (!quote) throw new Error('Rhino.fi quote unavailable. Check the wallet and network.');
         return {

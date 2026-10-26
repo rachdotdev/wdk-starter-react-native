@@ -91,8 +91,13 @@ export function useLifiProvider(network: string, accountIndex: number): SwapProv
 
       async execute(quote) {
         const route = toRoute(quote.request);
+        // Re-quote right before submitting. The displayed quote goes stale, and LI.FI
+        // rejects execution when the live output is below the old minimum. The fresh
+        // minimum still applies the same slippage as the request.
+        const fresh = await lifi.quoteSwidge(route);
+        if (!fresh) throw new Error('LI.FI quote unavailable. Check the wallet and network.');
         const result = await lifi.swidge(
-          { ...route, minAmountOut: BigInt(quote.toAmountMin) },
+          { ...route, minAmountOut: BigInt(fresh.toTokenAmountMin) },
           EXECUTE_CONFIG,
         );
         if (!result) throw new Error('LI.FI swap could not be submitted.');

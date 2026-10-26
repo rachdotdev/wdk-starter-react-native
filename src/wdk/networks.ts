@@ -272,6 +272,16 @@ export const NETWORKS = [
     indexerBlockchain: 'polygon',
     assets: [
       {
+        // Native gas token. Shown in the wallet list, with its USD value from CoinGecko.
+        id: 'pol-polygon',
+        isNative: true,
+        address: null,
+        symbol: 'POL',
+        name: 'Polygon',
+        decimals: 18,
+        color: '#8247E5',
+      },
+      {
         id: 'usdt-polygon',
         isNative: false,
         // Real mainnet USDT — verified against Tether's own docs,

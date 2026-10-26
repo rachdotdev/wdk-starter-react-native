@@ -11,6 +11,7 @@ import { createTransak } from '@/wdk/fiat/transak';
 import { fromBaseUnits, toBaseUnits } from '@/wdk/swap';
 import { useAccounts } from '@/state/accounts';
 import { useDemoCredit } from '@/state/demoCredit';
+import { ASSETS } from '@/wdk/assets';
 
 const NETWORKS = [
   { id: 'ethereum', label: 'Ethereum' },
@@ -93,7 +94,15 @@ export default function Buy() {
       // DEMO ONLY: credit the quoted USDT to the balance in memory (see state/demoCredit.ts).
       if (quote) {
         const credit = toBaseUnits(fromBaseUnits(quote.crypto, quote.decimals), USDT_DECIMALS);
-        if (credit) useDemoCredit.getState().addCredit(activeIndex, network, credit);
+        const assetId = ASSETS.find((a) => a.getSymbol() === 'USDT' && a.getNetwork() === network)?.getId();
+        if (credit && assetId) {
+          useDemoCredit.getState().addCredit(activeIndex, network, credit, {
+            id: `transak-demo-${Date.now()}`,
+            assetId,
+            amount: fromBaseUnits(quote.crypto, quote.decimals),
+            timestamp: Date.now(),
+          });
+        }
       }
       router.dismissAll();
     } catch (e) {

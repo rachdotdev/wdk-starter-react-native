@@ -14,7 +14,7 @@ import { NATIVE_GAS_ASSETS } from '@/wdk/swap/tokens';
  */
 export function useNativeGasBalances(accountIndex: number): Map<string, string> {
   const [ethereum, arbitrum, polygon] = NATIVE_GAS_ASSETS.map((asset) =>
-    useBalance(accountIndex, asset, { enabled: true, staleTime: 0 }),
+    useBalance(accountIndex, asset, { enabled: true, staleTime: 60_000 }),
   );
   const results = [ethereum, arbitrum, polygon];
 

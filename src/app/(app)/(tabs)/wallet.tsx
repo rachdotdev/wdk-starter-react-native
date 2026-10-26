@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, ScrollView, Pressable } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import BigNumber from 'bignumber.js';
 import {
   ChevronDown,
   ScanLine,
@@ -45,18 +46,13 @@ export default function WalletHome() {
   const { total } = useWdkTotalUsd();
   const activeIndex = useAccounts((s) => s.activeIndex);
 
-  // Force a fresh fetch every time Home regains focus — returning from a
-  // send, or from switching accounts — rather than trusting whatever the
-  // query's own staleTime timer happens to allow at that moment. See
-  // useWalletData.ts's comment for the full explanation of the underlying
-  // bug this fixes.
+  // Balances refresh at most once a minute (the query's staleTime), not on
+  // every focus. Only a completed send forces a refetch, via the polling below.
   const sendPending = usePendingRefresh((s) => s.pending);
   const clearSendPending = usePendingRefresh((s) => s.clear);
 
   useFocusEffect(
     useCallback(() => {
-      balances.refetch();
-
       if (!sendPending) return;
 
       // A send just completed — keep polling for a short window to catch
@@ -141,6 +137,14 @@ export default function WalletHome() {
               was a hardcoded '—' before; this is the Phase 1 PRD's
               "one total amount in USD across all tokens + chains". */}
           <Text variant="balance" style={{ marginTop: 6 }}>{total}</Text>
+          {/* Manual refresh: balances are otherwise cached for a minute. */}
+          <Pressable
+            onPress={() => balances.refetch()}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, padding: 6 }}
+          >
+            <RefreshCw size={moderateScale(14)} color={theme.colors.textSecondary} />
+            <Text variant="small" color="textSecondary">Refresh balances</Text>
+          </Pressable>
         </View>
 
         {/* Action row: Send / Receive / Swap / Buy */}
@@ -271,7 +275,7 @@ function TokenRow({
         </Pressable>
       ) : (
         <View style={{ alignItems: 'flex-end' }}>
-          <Text variant="tokenName">{amount}</Text>
+          <Text variant="tokenName">{amount === '—' ? amount : new BigNumber(amount).toFixed(2)}</Text>
           <Text variant="small" color="textSecondary">{fiatValue}</Text>
         </View>
       )}

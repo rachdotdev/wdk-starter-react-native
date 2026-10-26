@@ -5,6 +5,7 @@ import { Screen, ScreenHeader, Text, Card } from '@/components';
 import { useTheme } from '@/theme';
 import { useAccounts } from '@/state/accounts';
 import { useEarnPositions } from '@/wdk/earn/useMorpho';
+import { RISK_VAULT, SAVINGS_VAULT, useVaultNetApy } from '@/wdk/earn/vaultApy';
 import { fromBaseUnits } from '@/wdk/swap';
 
 const DECIMALS = 6;
@@ -18,12 +19,19 @@ export default function Earn() {
   const theme = useTheme();
   const { activeIndex } = useAccounts();
   const positions = useEarnPositions(activeIndex);
+  const savingsApy = useVaultNetApy(SAVINGS_VAULT);
+  const riskApy = useVaultNetApy(RISK_VAULT);
 
-  const card = (href: string, label: string, value: string | null, unit: string, hint: string) => (
+  const apyLabel = (apy: { data?: number }) =>
+    apy.data !== undefined ? `APY ${(apy.data * 100).toFixed(2)}%` : null;
+
+  const card = (href: string, label: string, value: string | null, unit: string, hint: string, apy?: string | null) => (
     <Pressable onPress={() => router.push(href as never)} accessibilityRole="button">
       <Card>
         <Text variant="label" color="textSecondary">{label}</Text>
-        <Text variant="small" color="textSecondary" style={{ marginTop: 2 }}>Ethereum mainnet</Text>
+        <Text variant="small" color="textSecondary" style={{ marginTop: 2 }}>
+          Ethereum mainnet{apy ? ` · ${apy}` : ''}
+        </Text>
         <Text variant="tokenName" style={{ marginTop: 4 }}>
           {value !== null ? `${fromBaseUnits(value, DECIMALS)} ${unit}` : '—'}
         </Text>
@@ -42,9 +50,9 @@ export default function Earn() {
       {positions.loading ? <Text variant="small" color="textSecondary">Loading positions…</Text> : null}
       {positions.error ? <Text variant="small" color="error" style={{ marginBottom: 12 }}>{positions.error}</Text> : null}
 
-      {card('/earn/savings', 'sky.money USDT Savings', positions.savings, 'USDT', 'Tap to deposit or withdraw')}
+      {card('/earn/savings', 'sky.money USDT Savings', positions.savings, 'USDT', 'Tap to deposit or withdraw', apyLabel(savingsApy))}
       <View style={{ height: 12 }} />
-      {card('/earn/risk', 'sky.money USDT Risk Capital', positions.riskCapital, 'USDT', 'Tap to deposit or withdraw')}
+      {card('/earn/risk', 'sky.money USDT Risk Capital', positions.riskCapital, 'USDT', 'Tap to deposit or withdraw', apyLabel(riskApy))}
       <View style={{ height: 12 }} />
       {card('/earn/xaut', 'Borrow against XAUt', positions.collateral, 'XAUt', 'Tap to deposit collateral or borrow USDT')}
 

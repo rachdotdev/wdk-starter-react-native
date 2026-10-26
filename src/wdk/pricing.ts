@@ -18,7 +18,8 @@ const pricingClient = new CoingeckoPricingClient({
   // BTC/ETH/USDT/XAUT/USAT are). It's the same underlying dollar-pegged
   // asset as USDT, so price it the same way — CoinGecko's own coin id for
   // Tether is 'tether' (confirmed directly against their API docs).
-  coinIds: { USDT0: 'tether' },
+  // POL is Polygon's native token; its CoinGecko id is 'polygon-ecosystem-token'.
+  coinIds: { USDT0: 'tether', POL: 'polygon-ecosystem-token' },
   ...(process.env.EXPO_PUBLIC_COINGECKO_API_KEY
     ? { apiKey: process.env.EXPO_PUBLIC_COINGECKO_API_KEY }
     : {}),

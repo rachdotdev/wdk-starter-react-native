@@ -185,15 +185,12 @@ function AccountRow({
   const { moderateScale } = useResponsive();
   const { total, refetch } = useWdkTotalUsdForAccount(index);
 
-  // Same fix as Home — force a fresh fetch for THIS account's own balance
-  // whenever the Accounts screen regains focus (e.g. right after a send),
-  // rather than trusting the query's own staleTime timer.
+  // Balances refresh on the query's own staleTime (one minute), not on every
+  // focus. Only a completed send forces a refetch, via the polling below.
   const sendPending = usePendingRefresh((s) => s.pending);
 
   useFocusEffect(
     useCallback(() => {
-      refetch();
-
       if (!sendPending) return;
 
       // Same reasoning as Home — a send just completed, and THIS row might

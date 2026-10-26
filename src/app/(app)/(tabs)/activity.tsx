@@ -267,8 +267,9 @@ export default function Activity() {
             <Text variant="small" color="textSecondary" style={{ marginTop: 14, marginBottom: 4 }}>
               {group.label}
             </Text>
-            {group.items.map((t) => (
-              <TxRow key={t.id} tx={t} onPress={() => router.push(`/tx/${t.id}`)} />
+            {/* Index in the key: one hash can yield several rows (e.g. a multi-transfer tx), so the hash alone isn't unique. */}
+            {group.items.map((t, i) => (
+              <TxRow key={`${t.id}-${i}`} tx={t} onPress={() => router.push(`/tx/${t.id}`)} />
             ))}
           </View>
         ))

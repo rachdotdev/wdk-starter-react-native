@@ -6,6 +6,7 @@ import { Screen, ScreenHeader, Text, Card, Button, AssetIcon } from '@/component
 import { useTheme } from '@/theme';
 import { useResponsive } from '@/theme/responsive';
 import { useAccounts } from '@/state/accounts';
+import { usePendingRefresh } from '@/state/pendingRefresh';
 import { useWdkBalances } from '@/wdk/hooks/useWalletData';
 import { useNativeGasBalances } from '@/wdk/hooks/useNativeGasBalances';
 import { explorerFor } from '@/wdk/networks';
@@ -81,6 +82,9 @@ export default function Swap() {
 
   const providers = useSwapProviders(from.network, activeIndex);
 
+  // Native gas tokens that also have a wallet row, mapped to that row's id.
+  const WALLET_ROW_FOR_NATIVE: Record<string, string> = { 'native-polygon': 'pol-polygon' };
+
   // Balance per wallet asset ID. Native gas tokens aren't in the wallet list, so they show none.
   const nativeBalances = useNativeGasBalances(activeIndex);
 
@@ -88,6 +92,14 @@ export default function Swap() {
     const map = new Map<string, { amount: string; fiatValue: string }>();
     for (const b of balances.data) map.set(b.token.id, { amount: b.amount, fiatValue: b.fiatValue });
     for (const asset of NATIVE_GAS_ASSETS) {
+      // POL is also a wallet asset, and its wallet row matches the chain. The separate
+      // native query for it returned a stale value, so prefer the wallet row.
+      const walletRow = WALLET_ROW_FOR_NATIVE[asset.getId()];
+      const matched = walletRow ? balances.data.find((b) => b.token.id === walletRow) : undefined;
+      if (matched) {
+        map.set(asset.getId(), { amount: matched.amount, fiatValue: matched.fiatValue });
+        continue;
+      }
       const raw = nativeBalances.get(asset.getId());
       if (raw == null) continue;
       map.set(asset.getId(), { amount: fromBaseUnits(raw, asset.getDecimals()), fiatValue: '—' });
@@ -159,6 +171,8 @@ export default function Swap() {
       const submitted = await provider.execute(selection.chosen);
       setResult(submitted);
       setStatus('pending');
+      // Balances change once the swap confirms, so have Home poll after returning.
+      usePendingRefresh.getState().markPending();
       setPhase('done');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Swap failed');

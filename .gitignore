@@ -72,3 +72,5 @@ web-build/
 .wdk-bundle/
 .wdk/
 .env
+# Generated demo material (kept in a separate repo)
+demo/
