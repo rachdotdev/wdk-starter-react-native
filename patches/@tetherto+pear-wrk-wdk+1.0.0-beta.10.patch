@@ -1,0 +1,65 @@
+diff --git a/node_modules/@tetherto/pear-wrk-wdk/src/handlers/execution.js b/node_modules/@tetherto/pear-wrk-wdk/src/handlers/execution.js
+index a2df110..88fa9a0 100644
+--- a/node_modules/@tetherto/pear-wrk-wdk/src/handlers/execution.js
++++ b/node_modules/@tetherto/pear-wrk-wdk/src/handlers/execution.js
+@@ -59,6 +59,37 @@ async function callMethodHandler (payload, context) {
+  * @param {RpcContext} context
+  * @returns {Promise<any>} The result from the account method
+  */
++// Derived accounts, per WDK instance. Deriving a wallet from its seed is slow on
++// device, and every balance call used to derive it again, so concurrent balance
++// calls ran past the app's network timeout. An entry is reused only while the
++// wallet manager it came from is still registered. After wdk.dispose() or a
++// re-register, `_wallets` holds a different manager, so the entry is rebuilt.
++const accountCache = new WeakMap()
++
++async function getCachedAccount (wdk, network, accountIndex) {
++  const manager = wdk._wallets?.get(network)
++  if (!manager) return wdk.getAccount(network, accountIndex)
++
++  let byKey = accountCache.get(wdk)
++  if (!byKey) {
++    byKey = new Map()
++    accountCache.set(wdk, byKey)
++  }
++
++  const key = `${network}:${accountIndex}`
++  const cached = byKey.get(key)
++  if (cached && cached.manager === manager) return cached.account
++
++  const pending = wdk.getAccount(network, accountIndex)
++  byKey.set(key, { manager, account: pending })
++  try {
++    return await pending
++  } catch (error) {
++    byKey.delete(key)
++    throw error
++  }
++}
++
+ const callWdkMethod = async ({ context, methodName, network, accountIndex, args = null, options = {} }) => {
+   const { wdk } = context
+ 
+@@ -70,9 +101,11 @@ const callWdkMethod = async ({ context, methodName, network, accountIndex, args
+     throw createErrorWithCode('Network must be a non-empty string', ERROR_CODES.BAD_REQUEST)
+   }
+ 
++  const timingStart = Date.now()
+   let account
+   try {
+-    account = await wdk.getAccount(network, accountIndex)
++    account = await getCachedAccount(wdk, network, accountIndex)
++    logger.info(`[TIMING] ${methodName} ${network}:${accountIndex} account ready in ${Date.now() - timingStart}ms`)
+   } catch (error) {
+     throw createErrorWithCode(
+       `Failed to get account for network "${network}" at index ${accountIndex}: ${error.message}`,
+@@ -156,7 +189,9 @@ const callWdkMethod = async ({ context, methodName, network, accountIndex, args
+   // - Non-array (object/primitive): pass as single argument -> method(args)
+   // - null/undefined: call with no arguments -> method()
+   const argsArray = Array.isArray(args) ? args : (args !== null && args !== undefined ? [args] : [])
++  const callStart = Date.now()
+   const result = await account[methodName](...argsArray)
++  logger.info(`[TIMING] ${methodName} ${network}:${accountIndex} call done in ${Date.now() - callStart}ms (total ${Date.now() - timingStart}ms)`)
+ 
+   if (options?.transformResult) {
+     return options.transformResult(result)

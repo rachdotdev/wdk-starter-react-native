@@ -8,6 +8,7 @@ import {
   ArrowDownLeft,
   ArrowLeftRight,
   CreditCard,
+  PiggyBank,
   RefreshCw,
 } from 'lucide-react-native';
 import { Screen, Text, LoadingState, ErrorState, AssetIcon } from '@/components';
@@ -145,9 +146,10 @@ export default function WalletHome() {
         {/* Action row: Send / Receive / Swap / Buy */}
         <View style={{ flexDirection: 'row', gap: 10, marginVertical: moderateScale(8) }}>
           <ActionButton icon={<ArrowUpRight size={moderateScale(20)} color={theme.colors.textPrimary} />} label="Send" onPress={() => router.push('/send')} />
+          <ActionButton icon={<ArrowLeftRight size={moderateScale(20)} color={theme.colors.textPrimary} />} label="Swap" onPress={() => router.push('/swap')} />
           <ActionButton icon={<ArrowDownLeft size={moderateScale(20)} color={theme.colors.textPrimary} />} label="Receive" onPress={() => router.push('/receive')} />
-          <ActionButton icon={<ArrowLeftRight size={moderateScale(20)} color={theme.colors.textSecondary} />} label="Swap" onPress={() => comingSoon('Swap')} disabled />
-          <ActionButton icon={<CreditCard size={moderateScale(20)} color={theme.colors.textSecondary} />} label="Buy" onPress={() => comingSoon('Buy')} disabled />
+          <ActionButton icon={<PiggyBank size={moderateScale(20)} color={theme.colors.textPrimary} />} label="Earn" onPress={() => router.push('/earn')} />
+          <ActionButton icon={<CreditCard size={moderateScale(20)} color={theme.colors.textPrimary} />} label="Buy" onPress={() => router.push('/buy')} />
         </View>
 
         {/* Tokens */}

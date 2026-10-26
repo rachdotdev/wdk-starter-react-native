@@ -1,6 +1,7 @@
 import type { WdkConfigs } from '@tetherto/wdk-react-native-core';
 import type { BtcWalletConfig } from '@tetherto/wdk-wallet-btc';
 import type { Evm7702GaslessWalletConfig } from '@tetherto/wdk-wallet-evm-7702-gasless';
+import type { SolanaWalletConfig } from '@tetherto/wdk-wallet-solana';
 import { AppAsset, type AppAssetConfig } from './AppAsset';
 import type { AssetIconSource } from '@/theme/assetIcons';
 
@@ -62,7 +63,7 @@ import type { AssetIconSource } from '@/theme/assetIcons';
  * every call against it will fail.
  */
 
-export type NetworkKind = 'bitcoin' | 'evm';
+export type NetworkKind = 'bitcoin' | 'evm' | 'solana';
 
 export interface NetworkAssetDefinition {
   id: string;
@@ -99,6 +100,8 @@ export interface NetworkDefinition {
     provider: string | undefined;
     bundlerUrl: string | undefined;
     paymasterUrl: string | undefined;
+    /** Pimlico sponsorship policy ID. Optional; sponsorship works without one. */
+    sponsorshipPolicyId?: string | undefined;
   };
 
   // ── Display ──────────────────────────────────────────────────────────
@@ -185,6 +188,7 @@ export const NETWORKS = [
       provider: process.env.EXPO_PUBLIC_EVM_ETHEREUM_PROVIDER,
       bundlerUrl: process.env.EXPO_PUBLIC_EVM_ETHEREUM_BUNDLER_URL,
       paymasterUrl: process.env.EXPO_PUBLIC_EVM_ETHEREUM_PAYMASTER_URL,
+      sponsorshipPolicyId: process.env.EXPO_PUBLIC_EVM_ETHEREUM_SPONSORSHIP_POLICY_ID,
     },
     displayNameBase: 'Ethereum',
     networkLabel: process.env.EXPO_PUBLIC_EVM_ETHEREUM_NETWORK_LABEL,
@@ -194,12 +198,8 @@ export const NETWORKS = [
       hasBackground: false,
     },
     explorerName: 'Etherscan',
-    // Points at Sepolia, matching the provider above. Change both together
-    // if you repoint this network at real mainnet.
-    explorerUrl: (h) => `https://sepolia.etherscan.io/tx/${h}`,
-    // 'sepolia', NOT 'ethereum' — the indexer treats them as separate
-    // chains. Change alongside the two lines above if repointing.
-    indexerBlockchain: 'sepolia',
+    explorerUrl: (h) => `https://etherscan.io/tx/${h}`,
+    indexerBlockchain: 'ethereum',
     assets: [
       // Native ETH is deliberately absent, not an oversight: the indexer's
       // token type is exactly "usdt" | "xaut" | "btc" — there's no "eth",
@@ -208,11 +208,10 @@ export const NETWORKS = [
       {
         id: 'usdt-ethereum',
         isNative: false,
-        // Candide's Sepolia test USDT. Swap to real mainnet USDT
-        // (0xdAC17F958D2ee523a2206206994597C13D831ec7) if repointing.
-        address: '0xd077A400968890Eacc75cdc901F0356c943e4fDb',
+        // Real mainnet USDT.
+        address: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
         symbol: 'USDT',
-        name: 'Tether USD (Sepolia testnet)',
+        name: 'Tether USD',
         decimals: 6,
         color: '#009393',
       },
@@ -278,6 +277,35 @@ export const NETWORKS = [
         // Real mainnet USDT — verified against Tether's own docs,
         // Polygonscan, CoinGecko and CoinMarketCap.
         address: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
+        symbol: 'USDT',
+        name: 'Tether USD',
+        decimals: 6,
+        color: '#009393',
+      },
+    ],
+  },
+
+  {
+    network: 'solana' as const,
+    kind: 'solana',
+    provider: process.env.EXPO_PUBLIC_SOLANA_PROVIDER,
+    displayNameBase: 'Solana',
+    color: '#14F195',
+    icon: {
+      source: require('@/../assets/images/chains/solana-sol-logo.png'),
+      hasBackground: false,
+    },
+    explorerName: 'Solscan',
+    explorerUrl: (h) => `https://solscan.io/tx/${h}`,
+    // Not mapped yet: the indexer's Solana blockchain key is unverified, so
+    // Activity skips Solana instead of showing a list that may be empty.
+    indexerBlockchain: null,
+    assets: [
+      {
+        id: 'usdt-solana',
+        isNative: false,
+        // Tether USDt SPL token on Solana mainnet, from Tether's docs.
+        address: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
         symbol: 'USDT',
         name: 'Tether USD',
         decimals: 6,
@@ -390,6 +418,7 @@ function buildEvmConfig(
     provider: evm.provider || '',
     bundlerUrl: evm.bundlerUrl || '',
     ...(evm.paymasterUrl ? { paymasterUrl: evm.paymasterUrl } : {}),
+    ...(evm.sponsorshipPolicyId ? { sponsorshipPolicyId: evm.sponsorshipPolicyId } : {}),
     delegationAddress: EVM_DELEGATION_ADDRESS,
     isSponsored: true,
   };
@@ -409,6 +438,16 @@ function buildEvmConfig(
  * mismatch worth confirming is intentional rather than assuming it is.
  * Testnet address derivation would be `btcNetwork: 'testnet'` (tb1…).
  */
+/** Solana wallet config. The RPC endpoint comes from `.env` (EXPO_PUBLIC_SOLANA_PROVIDER). */
+function buildSolanaConfig(provider: string | undefined): SolanaWalletConfig {
+  if (!provider) {
+    console.warn(
+      '[wdk/networks] "solana" is missing EXPO_PUBLIC_SOLANA_PROVIDER — balances and sends on Solana will not work until it is set in .env.',
+    );
+  }
+  return { provider: provider || '', commitment: 'confirmed' };
+}
+
 function buildBitcoinConfig(
   btcNetwork: BtcWalletConfig['network'],
   provider: string | undefined,
@@ -422,19 +461,105 @@ function buildBitcoinConfig(
   };
 }
 
-export const wdkConfigs: WdkConfigs<BtcWalletConfig | Evm7702GaslessWalletConfig> = {
+/**
+ * Name of the LI.FI swap/bridge protocol registered on an EVM network. Must
+ * match the keys under `protocols` in `wdk.config.js`.
+ */
+export function lifiProtocolName(network: string): string {
+  return `lifi-${network}`;
+}
+
+/**
+ * Name of the Symbiosis swap/bridge protocol registered on an EVM network.
+ * Must match the keys under `protocols` in `wdk.config.js`.
+ */
+export function symbiosisProtocolName(network: string): string {
+  return `symbiosis-${network}`;
+}
+
+/** EVM chain IDs for the networks the swap providers use. */
+export function rhinofiProtocolName(network: string): string {
+  return `rhinofi-${network}`;
+}
+
+export function zeroExProtocolName(network: string): string {
+  return `zerox-${network}`;
+}
+
+export const EVM_CHAIN_IDS: Record<string, number> = {
+  ethereum: 1,
+  arbitrum: 42161,
+  polygon: 137,
+};
+
+/** Morpho lending protocols, both on Ethereum. The savings vault is a preset, and the risk capital vault is set by address. */
+export const MORPHO_PROTOCOLS = {
+  'morpho-savings': {
+    protocolName: 'morpho-savings',
+    blockchain: 'ethereum',
+    config: { chainId: 1, presets: { earn: 'sky-money-usdt-savings', borrow: 'xaut' } },
+  },
+  'morpho-risk': {
+    protocolName: 'morpho-risk',
+    blockchain: 'ethereum',
+    config: { chainId: 1, earnVaultAddress: '0x2bD3A43863c07B6A01581FADa0E1614ca5DF0E3d', presets: { borrow: 'xaut' } },
+  },
+};
+
+export const wdkConfigs: WdkConfigs<BtcWalletConfig | Evm7702GaslessWalletConfig | SolanaWalletConfig> = {
   networks: Object.fromEntries(
     NETWORKS.map((n) => [
       n.network,
       {
         blockchain: n.network,
         config:
-          n.kind === 'evm'
+          n.kind === "evm"
             ? buildEvmConfig(n.network, n.evm!)
-            : buildBitcoinConfig(n.btcNetwork, n.provider),
+            : n.kind === "solana"
+              ? buildSolanaConfig(n.provider)
+              : buildBitcoinConfig(n.btcNetwork, n.provider),
       },
     ]),
   ),
-} as WdkConfigs<BtcWalletConfig | Evm7702GaslessWalletConfig>;
+  protocols: {
+    ...MORPHO_PROTOCOLS,
+    ...Object.fromEntries(
+    NETWORKS.filter((n) => n.kind === "evm").flatMap((n) => [
+      [
+        lifiProtocolName(n.network),
+        {
+          protocolName: lifiProtocolName(n.network),
+          blockchain: n.network,
+          config: { integrator: "wdk-starter-wallet", order: "RECOMMENDED" },
+        },
+      ],
+      [
+        rhinofiProtocolName(n.network),
+        {
+          protocolName: rhinofiProtocolName(n.network),
+          blockchain: n.network,
+          config: { apiKey: process.env.EXPO_PUBLIC_RHINO_API_KEY, maxNetworkFeeBps: 150, maxProtocolFeeBps: 100 },
+        },
+      ],
+      [
+        zeroExProtocolName(n.network),
+        {
+          protocolName: zeroExProtocolName(n.network),
+          blockchain: n.network,
+          config: { chainId: EVM_CHAIN_IDS[n.network], apiKey: process.env.EXPO_PUBLIC_ZERO_EX_API_KEY, defaultSlippage: 0.01, maxProtocolFeeBps: 100 },
+        },
+      ],
+      [
+        symbiosisProtocolName(n.network),
+        {
+          protocolName: symbiosisProtocolName(n.network),
+          blockchain: n.network,
+          config: { chain: EVM_CHAIN_IDS[n.network], partnerId: "wdk-starter-wallet", maxProtocolFeeBps: 100 },
+        },
+      ],
+    ]),
+    ),
+  },
+} as WdkConfigs<BtcWalletConfig | Evm7702GaslessWalletConfig | SolanaWalletConfig>;
 
 export default wdkConfigs;

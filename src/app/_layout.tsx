@@ -41,6 +41,9 @@ function RootStack() {
       <Stack.Screen name="unlock" />
       <Stack.Screen name="send" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
       <Stack.Screen name="receive" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="swap" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="earn" options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }} />
+      <Stack.Screen name="buy" options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
       <Stack.Screen name="accounts" />
       <Stack.Screen name="tx" />
     </Stack>

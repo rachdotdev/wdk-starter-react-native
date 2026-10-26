@@ -7,6 +7,7 @@ import { DEFAULT_WALLET_ID } from '../walletIdentity';
 import { usePrices } from '../pricing';
 import { fetchAllTransfers } from '../indexer';
 import { useAccounts } from '@/state/accounts';
+import { useDemoCredit, creditKey } from '@/state/demoCredit';
 import type { Account, TokenBalance, ChainId, Transaction } from '@/domain/models';
 
 /**
@@ -81,6 +82,7 @@ export function useWdkBalancesForAccount(accountIndex: number) {
     [],
   );
   const { prices, isLoading: pricesLoading } = usePrices(symbols);
+  const demoCredits = useDemoCredit((s) => s.credits);
 
   const balances: TokenBalance[] = useMemo(() => {
     return ASSETS.map((asset) => {
@@ -94,7 +96,13 @@ export function useWdkBalancesForAccount(accountIndex: number) {
       // possible to show an honest, actionable state instead of a
       // silently misleading $0 balance.
       const fetchFailed = row != null && row.success === false;
-      const amount = fetchFailed ? '—' : toDisplay(row?.balance, asset.getDecimals());
+      // DEMO ONLY: add the frontend-only Transak credit (see state/demoCredit.ts)
+      // to the USDT row before formatting, so the amount and the total both pick it up.
+      const credit =
+        asset.getSymbol() === 'USDT' ? demoCredits[creditKey(accountIndex, asset.getNetwork())] : undefined;
+      const balance =
+        credit && row ? new BigNumber(row.balance ?? 0).plus(credit).toFixed(0) : row?.balance;
+      const amount = fetchFailed ? '—' : toDisplay(balance, asset.getDecimals());
       const price = prices[asset.getSymbol()];
       const fiatValue =
         fetchFailed || price == null ? '—' : formatUsd(new BigNumber(amount).multipliedBy(price));
@@ -110,7 +118,7 @@ export function useWdkBalancesForAccount(accountIndex: number) {
         fetchFailed,
       };
     });
-  }, [data, prices]);
+  }, [data, prices, demoCredits, accountIndex]);
 
   return {
     data: balances,

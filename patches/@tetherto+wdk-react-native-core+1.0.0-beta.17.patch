@@ -1,0 +1,30 @@
+diff --git a/node_modules/@tetherto/wdk-react-native-core/src/services/accountService.ts b/node_modules/@tetherto/wdk-react-native-core/src/services/accountService.ts
+index d35ab4e..9b2ed1b 100644
+--- a/node_modules/@tetherto/wdk-react-native-core/src/services/accountService.ts
++++ b/node_modules/@tetherto/wdk-react-native-core/src/services/accountService.ts
+@@ -53,6 +53,7 @@ export class AccountService {
+ 
+     validateNetworkName(network)
+     validateAccountIndex(accountIndex)
++    console.log("[TIMING] callAccountMethod " + network + ":" + accountIndex + " " + String(methodName) + " start")
+ 
+     const hrpc = await requireInitialized()
+ 
+diff --git a/node_modules/@tetherto/wdk-react-native-core/src/services/balanceService.ts b/node_modules/@tetherto/wdk-react-native-core/src/services/balanceService.ts
+index 5f3e6a1..6cf364c 100644
+--- a/node_modules/@tetherto/wdk-react-native-core/src/services/balanceService.ts
++++ b/node_modules/@tetherto/wdk-react-native-core/src/services/balanceService.ts
+@@ -506,10 +506,13 @@ async function fetchNetworkBalancesWithTimeout(
+     }, networkTimeoutMs);
+   });
+ 
++  const timingStart = Date.now();
++  console.log(`[TIMING] fetchBalances ${network}:${accountIndex} start`);
+   const results = await Promise.race([
+     fetchBalancesForNetwork(accountIndex, networkAssets),
+     timeout,
+   ]);
++  console.log(`[TIMING] fetchBalances ${network}:${accountIndex} finished in ${Date.now() - timingStart}ms`);
+   clearTimeout(timeoutId!);
+   return results;
+ }
