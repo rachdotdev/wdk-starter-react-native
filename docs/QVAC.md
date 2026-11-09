@@ -67,7 +67,14 @@ QVAC's plugin also limits Android to `arm64-v8a`, pins NDK 29 and sets
 
 ## Known limits
 
-- Verified so far: `npm ci`, `expo prebuild` for Android, `tsc`, and a Hermes JS export. Not yet run on a device or built with Gradle/Xcode.
+- Tested on the iOS simulator (iPhone 17 Pro, iOS 26.5, Xcode 26.6): the build
+  succeeds and the wallet works (create, unlock, balances on all 4 networks), so
+  the WDK worklet runs fine on bare-kit 0.16. The model downloads and loads, but
+  the app aborts (SIGABRT, while llama.cpp compiles Metal shaders) on the first
+  prompt, even with `gpu_layers: 0`. Inference needs a physical device, as QVAC
+  documents. Not yet tested on a physical device.
+- In a dev build, the first "Start assistant" press can reload the app while
+  Metro bundles QVAC's lazy imports for the first time. Pressing it again works.
 - A 1B model is small: answers can be wrong, especially arithmetic. The prompt
   tells it to only use the wallet data it was given.
 - The model holds about 1 GB of RAM while loaded. "Stop assistant" unloads it
