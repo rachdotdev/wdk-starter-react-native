@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { Wallet, List } from 'lucide-react-native';
+import { Wallet, List, Sparkles } from 'lucide-react-native';
 import { useTheme } from '@/theme';
 
 export default function TabsLayout() {
@@ -21,6 +21,10 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="activity"
         options={{ title: 'Activity', tabBarIcon: ({ color, size }) => <List color={color} size={size} /> }}
+      />
+      <Tabs.Screen
+        name="assistant"
+        options={{ title: 'Assistant', tabBarIcon: ({ color, size }) => <Sparkles color={color} size={size} /> }}
       />
     </Tabs>
   );
