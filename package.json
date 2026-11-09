@@ -10,11 +10,15 @@
     "prebuild": "expo prebuild --clean",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
-    "postinstall": "wdk-worklet-bundler generate"
+    "postinstall": "wdk-worklet-bundler generate",
+    "link:wdk-addons": "node modules/qvac/link-wdk-addons.js"
   },
   "dependencies": {
     "@buildonspark/spark-frost-bare-addon": "^0.0.12",
     "@ledgerhq/ledger-bitcoin": "^0.3.1",
+    "@qvac/fabric-android-arm64": "0.25.0",
+    "@qvac/fabric-ios": "0.25.0",
+    "@qvac/sdk": "0.23.0",
     "@react-native-google-signin/google-signin": "^16.1.2",
     "@react-navigation/native": "^7.3.3",
     "@tanstack/react-query": "^5.101.0",
@@ -35,6 +39,8 @@
     "expo-build-properties": "^55.0.13",
     "expo-clipboard": "^55.0.0",
     "expo-constants": "^55.0.16",
+    "expo-device": "~55.0.21",
+    "expo-file-system": "~55.0.26",
     "expo-linking": "^55.0.15",
     "expo-navigation-bar": "^55.0.0",
     "expo-router": "^55.0.14",
@@ -46,7 +52,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-native": "0.83.6",
-    "react-native-bare-kit": "0.14.5",
+    "react-native-bare-kit": "0.16.0",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-get-random-values": "^2.0.0",
     "react-native-nitro-modules": "^0.36.1",
@@ -62,6 +68,7 @@
   },
   "devDependencies": {
     "@expo/config-plugins": "~55.0.8",
+    "bare-link": "^4.2.0",
     "dotenv": "^16.4.5",
     "@tetherto/wdk-worklet-bundler": "^1.0.0-beta.9",
     "@types/react": "~19.2.10",

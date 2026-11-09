@@ -22,6 +22,8 @@ If you're new here, **read the docs in this order**:
    backup, including the external account setup you'll need to do yourself.
 6. [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) — a running list of
    real bugs we hit and how they were fixed, so you don't rediscover them.
+7. [`docs/QVAC.md`](docs/QVAC.md) — the on-device AI assistant (QVAC proof
+   of concept) and the bare-kit upgrade it needed.
 
 ## What's actually built right now
 
