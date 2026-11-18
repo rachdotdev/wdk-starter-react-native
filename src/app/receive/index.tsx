@@ -3,7 +3,8 @@ import { View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import QRCode from 'react-native-qrcode-svg';
-import { ChevronDown, Check, Copy, TriangleAlert } from 'lucide-react-native';
+import { ChevronDown, ChevronRight, Check, Copy, TriangleAlert } from 'lucide-react-native';
+import { isSdaConfigured } from '@/sda/client';
 import { Screen, ScreenHeader, Text, Card, AssetIcon } from '@/components';
 import { useTheme } from '@/theme';
 import { useResponsive } from '@/theme/responsive';
@@ -195,6 +196,20 @@ export default function Receive() {
             : `Only send assets on ${networkDisplayName(selected.getNetwork())} to this address. Sending assets from a different network will result in loss.`}
         </Text>
       </View>
+
+      {/* Sending from an exchange or another chain: one address for every
+          supported EVM chain, forwarded here (see app/deposit). */}
+      {isSdaConfigured && (
+        <Pressable onPress={() => router.push('/deposit')}>
+          <Card style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={{ flex: 1 }}>
+              <Text variant="tokenName">Sending from an exchange or another chain?</Text>
+              <Text variant="small" color="textSecondary">Use one deposit address for every supported chain</Text>
+            </View>
+            <ChevronRight size={moderateScale(18)} color={theme.colors.textSecondary} />
+          </Card>
+        </Pressable>
+      )}
     </Screen>
   );
 }

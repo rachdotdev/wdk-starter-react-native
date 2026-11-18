@@ -1,0 +1,18 @@
+{
+  "name": "wdk-starter-sda-server",
+  "private": true,
+  "description": "Backend for the Deposit screen: activates, renews and tracks Candide forwarding addresses. Holds the Candide API URL and policy secret so the app never does.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.9"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env index.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@candidelabs/wdk-protocol-sda-candide": "1.0.0-beta.1",
+    "@tetherto/wdk-wallet": "1.0.0-beta.26",
+    "ethers": "6.17.0"
+  }
+}
