@@ -1,6 +1,13 @@
 import CandideForwardingProtocol from '@candidelabs/wdk-protocol-sda-candide'
 import { NoSuchElementError } from '@tetherto/wdk-wallet/protocols'
-import { keccak256, solidityPacked, isAddress, getAddress } from 'ethers'
+import { validateEVMAddress } from '@tetherto/wdk-utils'
+import { createHmac } from 'node:crypto'
+
+/** Validates an EVM address with WDK's own checker and returns it in one canonical (lowercase) form. */
+function parseRecipient (input) {
+  if (!validateEVMAddress(input).success) throw new InputError('recipient must be an EVM address')
+  return input.trim().toLowerCase()
+}
 
 /**
  * Wraps the Candide SDA module for the app. One instance holds the policy secret; nothing here signs
@@ -24,9 +31,10 @@ export function createSdaService (env = process.env) {
     ...(env.CANDIDE_RECOVERY_WITHDRAWER ? { recoveryWithdrawer: env.CANDIDE_RECOVERY_WITHDRAWER } : {})
   })
 
-  // keccak256(serverSecret, recipient): one stable address per user, not derivable by anyone who only knows
+  // HMAC-SHA256(serverSecret, recipient): one stable address per user, not derivable by anyone who only knows
   // the user's public wallet address.
-  const saltFor = (recipient) => keccak256(solidityPacked(['bytes32', 'address'], [env.SDA_SALT_SECRET, recipient]))
+  const saltKey = Buffer.from(env.SDA_SALT_SECRET.slice(2), 'hex')
+  const saltFor = (recipient) => '0x' + createHmac('sha256', saltKey).update(recipient).digest('hex')
 
   const toResponse = (descriptor) => ({
     address: descriptor.address,
@@ -48,8 +56,7 @@ export function createSdaService (env = process.env) {
      * close, and never returns an address whose monitoring has lapsed.
      */
     async getLiveDepositAddress (recipientInput) {
-      if (!isAddress(recipientInput)) throw new InputError('recipient must be an EVM address')
-      const recipient = getAddress(recipientInput)
+      const recipient = parseRecipient(recipientInput)
       const options = { sourceChains, destinationChain, destinationAddress: recipient, salt: saltFor(recipient) }
 
       const address = await sda.deriveDepositAddress(options)
@@ -77,8 +84,7 @@ export function createSdaService (env = process.env) {
 
     /** Recent forwards through the user's deposit address, newest first. */
     async getTransfers (recipientInput, { limit = 20 } = {}) {
-      if (!isAddress(recipientInput)) throw new InputError('recipient must be an EVM address')
-      const recipient = getAddress(recipientInput)
+      const recipient = parseRecipient(recipientInput)
       const address = await sda.deriveDepositAddress({ sourceChains, destinationChain, destinationAddress: recipient, salt: saltFor(recipient) })
       const transfers = await sda.getTransfers(address, { limit })
       return transfers.map((transfer) => ({

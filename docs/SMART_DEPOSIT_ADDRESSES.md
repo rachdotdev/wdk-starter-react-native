@@ -24,7 +24,7 @@ both stay in `server/.env`.
 The server, for each user:
 
 1. Derives the address from the user's Arbitrum address and a salt of
-   `keccak256(SDA_SALT_SECRET, recipient)`, so nobody can link a deposit
+   `HMAC-SHA256(SDA_SALT_SECRET, recipient)` (Node's built-in `crypto`), so nobody can link a deposit
    address to a wallet without the secret.
 2. Activates it the first time it's requested.
 3. Renews monitoring only when less than `SDA_RENEW_WITHIN_SECONDS` (2 h by
