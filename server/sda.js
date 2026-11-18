@@ -14,7 +14,7 @@ export function createSdaService (env = process.env) {
 
   const destinationChain = env.SDA_DESTINATION_CHAIN || 'arbitrum'
   const sourceChains = (env.SDA_SOURCE_CHAINS || 'ethereum,polygon').split(',').map((chain) => chain.trim()).filter(Boolean)
-  const renewWithin = Number(env.SDA_RENEW_WITHIN_SECONDS || 24 * 60 * 60)
+  const renewWithin = Number(env.SDA_RENEW_WITHIN_SECONDS || 2 * 60 * 60)
   // Only Tether assets are shown to users, whatever else the Candide policy forwards.
   const acceptedSymbols = new Set((env.SDA_ACCEPTED_SYMBOLS || 'USDT,USDT0,XAUT0').split(',').map((s) => s.trim().toUpperCase()).filter(Boolean))
 

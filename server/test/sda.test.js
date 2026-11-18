@@ -9,13 +9,13 @@ const env = {
   SDA_SALT_SECRET: '0x' + 'ab'.repeat(32),
   SDA_DESTINATION_CHAIN: 'arbitrum',
   SDA_SOURCE_CHAINS: 'ethereum,polygon',
-  SDA_RENEW_WITHIN_SECONDS: '86400'
+  SDA_RENEW_WITHIN_SECONDS: '7200'
 }
 const USER = '0x1111111111111111111111111111111111111111'
 const OTHER = '0x2222222222222222222222222222222222222222'
 
 test('activates on first request, renews only when expiry is close', async () => {
-  const mock = installMock({ ttlSeconds: 3600 }) // 1 h left: inside the 24 h renew window
+  const mock = installMock({ ttlSeconds: 3600 }) // 1 h left: inside the 2 h renew window
   try {
     const service = createSdaService(env)
     const first = await service.getLiveDepositAddress(USER)
@@ -25,7 +25,7 @@ test('activates on first request, renews only when expiry is close', async () =>
     assert.ok(first.accepts.some((t) => t.chain === 137 && t.symbol === 'USDT'))
     assert.ok(first.accepts.every((t) => ['USDT', 'USDT0', 'XAUT0'].includes(t.symbol))) // non-Tether tokens filtered out
     const activations = mock.calls.filter((c) => c.method === 'account_activateForwardingAddress')
-    assert.equal(activations.length, 2) // create, then renew because 1 h < 24 h
+    assert.equal(activations.length, 2) // create, then renew because 1 h < 2 h
     assert.ok(activations.every((c) => c.auth))
 
     const again = await service.getLiveDepositAddress(USER.toUpperCase().replace('0X', '0x'))

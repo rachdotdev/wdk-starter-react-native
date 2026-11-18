@@ -27,9 +27,10 @@ The server, for each user:
    `keccak256(SDA_SALT_SECRET, recipient)`, so nobody can link a deposit
    address to a wallet without the secret.
 2. Activates it the first time it's requested.
-3. Renews monitoring only when less than `SDA_RENEW_WITHIN_SECONDS` (24 h by
-   default) is left. Every activation and renewal is billed to the policy,
-   so it doesn't renew on every screen open.
+3. Renews monitoring only when less than `SDA_RENEW_WITHIN_SECONDS` (2 h by
+   default) is left. Candide monitors an address for about 24 h after each
+   activation, and every activation and renewal is billed to the policy, so
+   it doesn't renew on every screen open. Keep the threshold well below 24 h.
 4. Refuses to return an address whose monitoring isn't active.
 
 ## Run it
