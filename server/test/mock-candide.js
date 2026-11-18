@@ -7,7 +7,7 @@ const RELAYER = '0x3333333333333333333333333333333333333333'
 const USDT0_ARB = '0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9'
 const ROUTES = {
   1: [{ sourceChainId: 1, destinationChainId: 42161, tokens: [{ address: '0xdac17f958d2ee523a2206206994597c13d831ec7', symbol: 'USDT', decimals: 6, destinationAddress: USDT0_ARB, feeBps: 20 }] }],
-  137: [{ sourceChainId: 137, destinationChainId: 42161, tokens: [{ address: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', symbol: 'USDT', decimals: 6, destinationAddress: USDT0_ARB, feeBps: 20 }] }],
+  137: [{ sourceChainId: 137, destinationChainId: 42161, tokens: [{ address: '0x0000000000000000000000000000000000000abc', symbol: 'OTHER', decimals: 6, destinationAddress: USDT0_ARB, feeBps: 20 }, { address: '0xc2132d05d31c914a87c6611c10748aeb04b58e8f', symbol: 'USDT', decimals: 6, destinationAddress: USDT0_ARB, feeBps: 20 }] }],
   42161: [{ sourceChainId: 42161, destinationChainId: 42161, tokens: [{ address: USDT0_ARB, symbol: 'USDT0', decimals: 6, destinationAddress: USDT0_ARB, feeBps: 0 }] }]
 }
 

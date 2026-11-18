@@ -41,12 +41,11 @@ const CHAIN_NAMES: Record<number, string> = {
   1: 'Ethereum',
   10: 'Optimism',
   137: 'Polygon',
-  8453: 'Base',
   42161: 'Arbitrum',
 };
 
 export const chainName = (id?: number) => (id === undefined ? '—' : CHAIN_NAMES[id] ?? `Chain ${id}`);
 
 /** USD₮ in prose; the API returns the raw symbol. */
-export const tokenLabel = (symbol: string) =>
-  symbol === 'USDT0' ? 'USD₮0' : symbol === 'USDT' ? 'USD₮' : symbol;
+const TOKEN_LABELS: Record<string, string> = { USDT: 'USD₮', USDT0: 'USD₮0', XAUT: 'XAU₮', XAUT0: 'XAU₮0' };
+export const tokenLabel = (symbol: string) => TOKEN_LABELS[symbol.toUpperCase()] ?? symbol;

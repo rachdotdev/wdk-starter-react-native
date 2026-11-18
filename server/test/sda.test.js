@@ -23,6 +23,7 @@ test('activates on first request, renews only when expiry is close', async () =>
     assert.equal(first.destinationChain, 42161)
     assert.ok(first.expiry > Date.now() / 1000)
     assert.ok(first.accepts.some((t) => t.chain === 137 && t.symbol === 'USDT'))
+    assert.ok(first.accepts.every((t) => ['USDT', 'USDT0', 'XAUT0'].includes(t.symbol))) // non-Tether tokens filtered out
     const activations = mock.calls.filter((c) => c.method === 'account_activateForwardingAddress')
     assert.equal(activations.length, 2) // create, then renew because 1 h < 24 h
     assert.ok(activations.every((c) => c.auth))
