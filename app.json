@@ -85,6 +85,7 @@
       ],
       "./modules/cloud-backup/withModularHeaders.js",
       "./modules/build/withCiBuildHardening.js",
+      "./modules/build/withMinPodDeploymentTarget.js",
       "expo-secure-store",
       [
         "@react-native-google-signin/google-signin",
