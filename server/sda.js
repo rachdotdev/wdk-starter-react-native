@@ -33,8 +33,8 @@ export function createSdaService (env = process.env) {
 
   // HMAC-SHA256(serverSecret, recipient): one stable address per user, not derivable by anyone who only knows
   // the user's public wallet address.
-  const saltKey = Buffer.from(env.SDA_SALT_SECRET.slice(2), 'hex')
-  const saltFor = (recipient) => '0x' + createHmac('sha256', saltKey).update(recipient).digest('hex')
+  // Same form as the article's snippet, so both give the same salt for the same input.
+  const saltFor = (recipient) => '0x' + createHmac('sha256', env.SDA_SALT_SECRET).update(recipient).digest('hex')
 
   const toResponse = (descriptor) => ({
     address: descriptor.address,
