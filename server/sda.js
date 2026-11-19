@@ -22,6 +22,10 @@ export function createSdaService (env = process.env) {
   const destinationChain = env.SDA_DESTINATION_CHAIN || 'arbitrum'
   const sourceChains = (env.SDA_SOURCE_CHAINS || 'ethereum,polygon').split(',').map((chain) => chain.trim()).filter(Boolean)
   const renewWithin = Number(env.SDA_RENEW_WITHIN_SECONDS || 2 * 60 * 60)
+  // A renewal buys about 24 h of monitoring. A threshold near that renews (and bills) on every request.
+  if (!(renewWithin > 0 && renewWithin <= 12 * 60 * 60)) {
+    throw new Error('SDA_RENEW_WITHIN_SECONDS must be between 1 and 43200 (12 h); 7200 is recommended')
+  }
   // Only Tether assets are shown to users, whatever else the Candide policy forwards.
   const acceptedSymbols = new Set((env.SDA_ACCEPTED_SYMBOLS || 'USDT,USDT0,XAUT0').split(',').map((s) => s.trim().toUpperCase()).filter(Boolean))
 
